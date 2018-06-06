@@ -1,24 +1,25 @@
 define([
-        '../Core/BoundingRectangle',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/Color',
-        '../Core/createGuid',
-        '../Core/defaultValue',
-        '../Core/defined',
-        '../Core/defineProperties',
-        '../Core/DeveloperError',
-        '../Core/DistanceDisplayCondition',
-        '../Core/Matrix4',
-        '../Core/NearFarScalar',
-        '../Core/Resource',
-        './HeightReference',
-        './HorizontalOrigin',
-        './SceneMode',
-        './SceneTransforms',
-        './VerticalOrigin'
+    '../Core/BoundingRectangle',
+    '../Core/Cartesian2',
+    '../Core/Cartesian3',
+    '../Core/Cartesian4',
+    '../Core/Cartographic',
+    '../Core/Color',
+    '../Core/createGuid',
+    '../Core/defaultValue',
+    '../Core/defined',
+    '../Core/defineProperties',
+    '../Core/DeveloperError',
+    '../Core/DistanceDisplayCondition',
+    '../Core/Matrix4',
+    '../Core/NearFarScalar',
+    '../Core/Resource',
+    './HeightReference',
+    './BillboardHighlight',
+    './HorizontalOrigin',
+    './SceneMode',
+    './SceneTransforms',
+    './VerticalOrigin'
     ], function(
         BoundingRectangle,
         Cartesian2,
@@ -36,6 +37,7 @@ define([
         NearFarScalar,
         Resource,
         HeightReference,
+        BillboardHighlight,
         HorizontalOrigin,
         SceneMode,
         SceneTransforms,
@@ -158,6 +160,7 @@ define([
         this._imageSubRegion = undefined;
         this._imageWidth = undefined;
         this._imageHeight = undefined;
+        this._billboardHighlight = defaultValue(new BillboardHighlight(options.billboardHighlight),  undefined);
 
         var image = options.image;
         var imageId = options.imageId;
@@ -878,6 +881,16 @@ define([
                 } else {
                     this.setImage(createGuid(), value);
                 }
+            }
+        },
+
+        billboardHighlight: {
+            get: function() {
+                // this._scale = 5;
+                return this._billboardHighlight;
+            },
+            set: function(value) {
+                this._billboardHighlight = new BillboardHighlight(value, this);
             }
         },
 

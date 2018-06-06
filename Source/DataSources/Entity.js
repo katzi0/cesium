@@ -21,6 +21,7 @@ define([
         './CylinderGraphics',
         './EllipseGraphics',
         './EllipsoidGraphics',
+        './EntityHighlight',
         './LabelGraphics',
         './ModelGraphics',
         './PathGraphics',
@@ -56,6 +57,7 @@ define([
         CylinderGraphics,
         EllipseGraphics,
         EllipsoidGraphics,
+        EntityHighlight,
         LabelGraphics,
         ModelGraphics,
         PathGraphics,
@@ -185,6 +187,8 @@ define([
         this._wall = undefined;
         this._wallSubscription = undefined;
         this._children = [];
+
+        this._entityHighlight = defaultValue(new EntityHighlight(options.entityHighlight),  undefined);
 
         /**
          * Gets or sets the entity collection that this entity belongs to.
@@ -387,6 +391,7 @@ define([
          * @type {LabelGraphics}
          */
         label : createPropertyTypeDescriptor('label', LabelGraphics),
+
         /**
          * Gets or sets the model.
          * @memberof Entity.prototype
@@ -465,7 +470,17 @@ define([
          * @memberof Entity.prototype
          * @type {WallGraphics}
          */
-        wall : createPropertyTypeDescriptor('wall', WallGraphics)
+        wall : createPropertyTypeDescriptor('wall', WallGraphics),
+
+
+        entityHighlight: {
+            get: function() {
+                return this._entityHighlight;
+            },
+            set: function(value) {
+                this._entityHighlight = new EntityHighlight(value, this);
+            }
+        },
     });
 
     /**
@@ -630,6 +645,5 @@ define([
     Entity.supportsMaterialsforEntitiesOnTerrain = function(scene) {
         return GroundPrimitive.supportsMaterials(scene);
     };
-
     return Entity;
 });

@@ -69,6 +69,11 @@ var buildFiles = ['Specs/**/*.js',
                   '!Specs/SpecList.js',
                   'Source/Shaders/**/*.glsl'];
 
+
+var shmandelFiles = [
+                  'Source/scene/**/*.js'];
+
+
 var filesToClean = ['Source/Cesium.js',
                     'Build',
                     'Instrumented',
@@ -110,8 +115,22 @@ gulp.task('build', function(done) {
     done();
 });
 
+gulp.task('shai-watch', function() {
+    gulp.watch(shmandelFiles, ['generateStubs', 'shai-build']);
+});
+
 gulp.task('build-watch', function() {
     gulp.watch(buildFiles, ['build']);
+});
+
+
+gulp.task('shai-build', function() {
+    var outputDirectory = path.join('Build', 'CesiumUnminified');
+    return combineJavaScript({
+        removePragmas : false,
+        optimizer : 'none',
+        outputDirectory : outputDirectory
+    });
 });
 
 gulp.task('buildApps', function() {
@@ -892,6 +911,8 @@ function minifyCSS(outputDirectory) {
         }, {concurrency : concurrency});
     });
 }
+
+
 
 function combineJavaScript(options) {
     var optimizer = options.optimizer;
