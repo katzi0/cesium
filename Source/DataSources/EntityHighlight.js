@@ -1,10 +1,11 @@
-define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defaultValue',], function(CallbackProperty, EasingFunction, defaultValue) {
+define(['../DataSources/CallbackProperty', '../Core/EasingFunction', '../Core/defaultValue'], function(CallbackProperty, EasingFunction, defaultValue) {
     'use strict';
 
     function EntityHighlight(props, scope) {
         EntityHighlight.prototype.scope = scope;
-        this._animateType = defaultValue(props.scale, 'enlarge');
-        this._primitiveType = defaultValue(props.scale, 'billboard');
+
+        this._animateType = defaultValue(props.animateType, 'enlarge');
+        this._primitiveType = defaultValue(props._primitiveType, 'billboard');
         this._scalePercent = defaultValue(props.scalePercent, 0.5);
         this._minScale = defaultValue(props.minScale, 1);
         this._interval = defaultValue(props.interval, true);
@@ -19,6 +20,23 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
         this._increase;
     }
 
+    EntityHighlight.prototype.options = [
+        { animateType : this._animateType },
+        { primitiveType : this._primitiveType },
+        { scalePercent : this._scalePercent },
+        { minScale: this._minScale },
+        { interval: this._interval },
+        { timeoutInterval: this._timeoutInterval },
+        { speed: this._speed },
+        { duration: this._duration },
+        { indicationOnly: this._indicationOnly },
+        { easingFunction: this._easingFunction },
+        { stopIncrease: this._stopIncrease },
+        { scaleSum: this._scaleSum },
+        { scale: this._scale },
+        { increase: this._increase }
+    ];
+
     EntityHighlight.prototype.setLongAnimate = function() {
         var scalePerStep = this.calculateEnlargeStepLongAnimation();
         var increase = this._increase;
@@ -27,44 +45,44 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
         var scale;
         EntityHighlight.prototype.scope.billboard.scale = new CallbackProperty(function() {
             scaleSum = scaleSum ? scaleSum + scalePerStep : minScale;
-        if (scaleSum >= 1) {
-            increase = false;
-            scalePerStep = -scalePerStep;
-            scaleSum += scalePerStep;
-        }
-        if (scaleSum <= 0){
-            increase = true;
-            scalePerStep = scalePerStep * -1;
-            scaleSum += scalePerStep;
-        }
+            if (scaleSum >= 1) {
+                increase = false;
+                scalePerStep = -scalePerStep;
+                scaleSum += scalePerStep;
+            }
+            if (scaleSum <= 0) {
+                increase = true;
+                scalePerStep = scalePerStep * -1;
+                scaleSum += scalePerStep;
+            }
 
-        scale = increase ? EasingFunction.BACK_OUT(scaleSum) : EasingFunction.BACK_IN(scaleSum);
-        scale += minScale;
-        return scale;
+            scale = increase ? EasingFunction.BACK_OUT(scaleSum) : EasingFunction.BACK_IN(scaleSum);
+            scale += minScale;
+            return scale;
         }, false);
 
         this._increase = increase;
-    }
+    };
 
     EntityHighlight.prototype.setShortAnimate = function() {
         var scalePerStep = this.calculateEnlargeStepShortAnimation();
         var scaleSum;
         var easingFunction = this._easingFunction;
         if (!this._stopIncrease) {
-            EntityHighlight.prototype.scope.billboard.scale = new CallbackProperty( function() {
+            EntityHighlight.prototype.scope.billboard.scale = new CallbackProperty(function() {
 
                 scaleSum =
                     scaleSum ?
                     scaleSum + scalePerStep : scalePerStep;
-            if (
-                scaleSum >= 1) {
-                return 1;
-            }
-            return EasingFunction[easingFunction](
-                scaleSum);
-            },false)
+                if (
+                    scaleSum >= 1) {
+                    return 1;
+                }
+                return EasingFunction[easingFunction](
+                    scaleSum);
+            }, false);
         }
-    }
+    };
 
     EntityHighlight.prototype.longAnimationStop = function() {
         var scalePercent = this._scalePercent + 1;
@@ -81,13 +99,16 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
             this.scale += this.increase ? scalePerStep : -scalePerStep;
             EntityHighlight.prototype.scope.billboard.scale = this._scale;
         }, this._timeoutInterval);
-    }
+    };
 
     EntityHighlight.prototype.shortAnimationStop = function() {
         EntityHighlight.prototype.scope.billboard.scale = 1;
-    }
+    };
 
-    EntityHighlight.prototype.stop = function(){
+    //stopped here...
+    EntityHighlight.setup();
+
+    EntityHighlight.prototype.stop = function() {
         switch (this._animateType) {
             case 'enlarge':
                 this.longAnimationStop();
@@ -99,7 +120,7 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
                 this.longAnimationStop();
                 break;
         }
-    }
+    };
 
     EntityHighlight.prototype.calculateEnlargeStepLongAnimation = function() {
         var durationInSeconds = 3000;
@@ -119,7 +140,7 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
         var scaleDelta = scalePercent * currentScale - currentScale;
         var scalePerStep = scaleDelta / numberOfSteps;
         return scalePerStep;
-    }
+    };
 
     EntityHighlight.prototype.start = function() {
         switch (this._animateType) {
@@ -133,8 +154,10 @@ define(['../DataSources/CallbackProperty','../Core/EasingFunction','../Core/defa
                 this.setLongAnimate();
                 break;
         }
-        if(!this._interval || this._indicationOnly){ this._stop() }
-    }
+        if (!this._interval || this._indicationOnly) {
+            this._stop();
+        }
+    };
 
     return EntityHighlight;
 });
