@@ -11,6 +11,29 @@ define([
         this._pickedPrimitve = {};
         this._animations = [];
         this._options = {};
+        this._setOptions = function(scope) {
+            var options = scope._options;
+            options.animateType = defaultValue(options.animateType, 'shrink/grow');
+            options.primitiveType = defaultValue(
+                options.primitiveType,
+                'billboard'
+            );
+            options.scalePercent = defaultValue(options.scalePercent, 0.9);
+            options.minScale = defaultValue(options.minScale, 1);
+            options.interval = defaultValue(options.interval, true);
+            options.timeoutInterval = defaultValue(options.timeoutInterval, 16);
+            options.speed = defaultValue(options.speed, 1000);
+            options.duration = defaultValue(options.duration, 2000);
+            options.indicationOnly = defaultValue(options.indicationOnly, false);
+            options.easingFunction = defaultValue(
+                options.easingFunction,
+                'ELASTIC_OUT'
+            );
+            options.stopIncrease = false;
+            options.scaleSum = 0;
+            options.scale = defaultValue(options.scale, this.minScale);
+            options.increase;
+        };
     }
 
     var AnimateType = {
@@ -18,44 +41,12 @@ define([
         IndicationEnlarge : 'IndicationEnlarge'
     };
 
-    EntityHighlight.prototype.setOptions = function(scope) {
-        var options = scope._options;
-        options.animateType = defaultValue(options.animateType, 'shrink/grow');
-        options.primitiveType = defaultValue(
-            options.primitiveType,
-            'billboard'
-        );
-        options.scalePercent = defaultValue(options.scalePercent, 0.9);
-        options.minScale = defaultValue(options.minScale, 1);
-        options.interval = defaultValue(options.interval, true);
-        options.timeoutInterval = defaultValue(options.timeoutInterval, 16);
-        options.speed = defaultValue(options.speed, 1000);
-        options.duration = defaultValue(options.duration, 2000);
-        options.indicationOnly = defaultValue(options.indicationOnly, false);
-        options.easingFunction = defaultValue(
-            options.easingFunction,
-            'ELASTIC_OUT'
-        );
-        options.stopIncrease = false;
-        options.scaleSum = 0;
-        options.scale = defaultValue(options.scale, this.minScale);
-        options.increase;
-    };
-
-    EntityHighlight.prototype.setDefinedPrimitivesInEntity = function(
-        selectedEntity
-    ) {
-        if (defined(selectedEntity.billboard)) {
-            this._pickedPrimitve.billboard = selectedEntity.billboard;
-        }
-    };
-
     EntityHighlight.prototype.setup = function(
         animationArr,
         newOptions,
         entity
     ) {
-        EntityHighlight.prototype.setOptions(this);
+        this._setOptions(this);
         EntityHighlight.prototype.scope = entity;
         var options = this._options;
 
@@ -95,7 +86,7 @@ define([
                 }
             });
             this._animations = helperArr;
-            this.setDefinedPrimitivesInEntity(selectedEntity);
+            setDefinedPrimitivesInEntity(selectedEntity,this);
         }
     };
 
@@ -223,6 +214,13 @@ define([
             EntityHighlight.prototype.scope.billboard.scale = 1;
         };
     };
+
+    function setDefinedPrimitivesInEntity(selectedEntity, scope)
+    {
+        if (defined(selectedEntity.billboard)) {
+            scope._pickedPrimitve.billboard = selectedEntity.billboard;
+        }
+    }
 
     return EntityHighlight;
 });
