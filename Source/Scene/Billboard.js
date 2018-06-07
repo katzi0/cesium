@@ -15,33 +15,31 @@ define([
     '../Core/NearFarScalar',
     '../Core/Resource',
     './HeightReference',
-    './BillboardHighlight',
     './HorizontalOrigin',
     './SceneMode',
     './SceneTransforms',
     './VerticalOrigin'
-    ], function(
-        BoundingRectangle,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        Cartographic,
-        Color,
-        createGuid,
-        defaultValue,
-        defined,
-        defineProperties,
-        DeveloperError,
-        DistanceDisplayCondition,
-        Matrix4,
-        NearFarScalar,
-        Resource,
-        HeightReference,
-        BillboardHighlight,
-        HorizontalOrigin,
-        SceneMode,
-        SceneTransforms,
-        VerticalOrigin) {
+], function(
+    BoundingRectangle,
+    Cartesian2,
+    Cartesian3,
+    Cartesian4,
+    Cartographic,
+    Color,
+    createGuid,
+    defaultValue,
+    defined,
+    defineProperties,
+    DeveloperError,
+    DistanceDisplayCondition,
+    Matrix4,
+    NearFarScalar,
+    Resource,
+    HeightReference,
+    HorizontalOrigin,
+    SceneMode,
+    SceneTransforms,
+    VerticalOrigin) {
     'use strict';
 
     /**
@@ -160,7 +158,6 @@ define([
         this._imageSubRegion = undefined;
         this._imageWidth = undefined;
         this._imageHeight = undefined;
-        this._billboardHighlight = defaultValue(new BillboardHighlight(options.billboardHighlight),  undefined);
 
         var image = options.image;
         var imageId = options.imageId;
@@ -250,10 +247,10 @@ define([
         },
 
         /**
-        * Gets or sets the Cartesian position of this billboard.
-        * @memberof Billboard.prototype
-        * @type {Cartesian3}
-        */
+         * Gets or sets the Cartesian position of this billboard.
+         * @memberof Billboard.prototype
+         * @type {Cartesian3}
+         */
         position : {
             get : function() {
                 return this._position;
@@ -881,16 +878,6 @@ define([
                 } else {
                     this.setImage(createGuid(), value);
                 }
-            }
-        },
-
-        billboardHighlight: {
-            get: function() {
-                // this._scale = 5;
-                return this._billboardHighlight;
-            },
-            set: function(value) {
-                this._billboardHighlight = new BillboardHighlight(value, this);
             }
         },
 

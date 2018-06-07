@@ -4,7 +4,6 @@
         "html"
     ],
     "rules": {
-        "no-unused-vars": ["error", {"vars": "all", "args": "none"}],
-        "quotes": ["error", "single"]
+        "no-unused-vars": ["error", {"vars": "all", "args": "none"}]
     }
 }

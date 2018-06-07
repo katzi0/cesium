@@ -69,10 +69,8 @@ var buildFiles = ['Specs/**/*.js',
                   '!Specs/SpecList.js',
                   'Source/Shaders/**/*.glsl'];
 
-
 var shmandelFiles = [
-                  'Source/scene/**/*.js'];
-
+    'Source/scene/**/*.js'];
 
 var filesToClean = ['Source/Cesium.js',
                     'Build',
@@ -116,21 +114,11 @@ gulp.task('build', function(done) {
 });
 
 gulp.task('shai-watch', function() {
-    gulp.watch(shmandelFiles, ['generateStubs', 'shai-build']);
+    gulp.watch(shmandelFiles, ['combine']);
 });
 
 gulp.task('build-watch', function() {
     gulp.watch(buildFiles, ['build']);
-});
-
-
-gulp.task('shai-build', function() {
-    var outputDirectory = path.join('Build', 'CesiumUnminified');
-    return combineJavaScript({
-        removePragmas : false,
-        optimizer : 'none',
-        outputDirectory : outputDirectory
-    });
 });
 
 gulp.task('buildApps', function() {
@@ -374,160 +362,160 @@ function deployCesium(bucketName, uploadDirectory, cacheControl, done) {
     var errors = [];
 
     return getCredentials()
-    .then(function() {
-        var prefix = uploadDirectory + '/';
-        return listAll(s3, bucketName, prefix, existingBlobs)
         .then(function() {
-            return globby([
-                'Apps/**',
-                'Build/**',
-                'Source/**',
-                'Specs/**',
-                'ThirdParty/**',
-                '*.md',
-                'favicon.ico',
-                'gulpfile.js',
-                'index.html',
-                'package.json',
-                'server.js',
-                'web.config',
-                '*.zip',
-                '*.tgz'
-            ], {
-                dot : true // include hidden files
-            });
-        })
-        .then(function(files) {
-            return Promise.map(files, function(file) {
-                var blobName = uploadDirectory + '/' + file;
-                var mimeLookup = getMimeType(blobName);
-                var contentType = mimeLookup.type;
-                var compress = mimeLookup.compress;
-                var contentEncoding = compress || mimeLookup.isCompressed ? 'gzip' : undefined;
-                var etag;
-
-                totalFiles++;
-
-                return readFile(file)
-                .then(function(content) {
-                    return compress ? gzip(content) : content;
-                })
-                .then(function(content) {
-                    // compute hash and etag
-                    var hash = crypto.createHash('md5').update(content).digest('hex');
-                    etag = crypto.createHash('md5').update(content).digest('base64');
-
-                    var index = existingBlobs.indexOf(blobName);
-                    if (index <= -1) {
-                        return content;
-                    }
-
-                    // remove files as we find them on disk
-                    existingBlobs.splice(index, 1);
-
-                    // get file info
-                    return s3.headObjectAsync({
-                        Bucket : bucketName,
-                        Key : blobName
-                    })
-                    .then(function(data) {
-                        if (data.ETag !== ('"' + hash + '"') ||
-                            data.CacheControl !== cacheControl ||
-                            data.ContentType !== contentType ||
-                            data.ContentEncoding !== contentEncoding) {
-                            return content;
-                        }
-
-                        // We don't need to upload this file again
-                        skipped++;
-                        return undefined;
-                    })
-                    .catch(function(error) {
-                        errors.push(error);
+            var prefix = uploadDirectory + '/';
+            return listAll(s3, bucketName, prefix, existingBlobs)
+                .then(function() {
+                    return globby([
+                        'Apps/**',
+                        'Build/**',
+                        'Source/**',
+                        'Specs/**',
+                        'ThirdParty/**',
+                        '*.md',
+                        'favicon.ico',
+                        'gulpfile.js',
+                        'index.html',
+                        'package.json',
+                        'server.js',
+                        'web.config',
+                        '*.zip',
+                        '*.tgz'
+                    ], {
+                        dot : true // include hidden files
                     });
                 })
-                .then(function(content) {
-                    if (!content) {
+                .then(function(files) {
+                    return Promise.map(files, function(file) {
+                        var blobName = uploadDirectory + '/' + file;
+                        var mimeLookup = getMimeType(blobName);
+                        var contentType = mimeLookup.type;
+                        var compress = mimeLookup.compress;
+                        var contentEncoding = compress || mimeLookup.isCompressed ? 'gzip' : undefined;
+                        var etag;
+
+                        totalFiles++;
+
+                        return readFile(file)
+                            .then(function(content) {
+                                return compress ? gzip(content) : content;
+                            })
+                            .then(function(content) {
+                                // compute hash and etag
+                                var hash = crypto.createHash('md5').update(content).digest('hex');
+                                etag = crypto.createHash('md5').update(content).digest('base64');
+
+                                var index = existingBlobs.indexOf(blobName);
+                                if (index <= -1) {
+                                    return content;
+                                }
+
+                                // remove files as we find them on disk
+                                existingBlobs.splice(index, 1);
+
+                                // get file info
+                                return s3.headObjectAsync({
+                                    Bucket : bucketName,
+                                    Key : blobName
+                                })
+                                    .then(function(data) {
+                                        if (data.ETag !== ('"' + hash + '"') ||
+                                            data.CacheControl !== cacheControl ||
+                                            data.ContentType !== contentType ||
+                                            data.ContentEncoding !== contentEncoding) {
+                                            return content;
+                                        }
+
+                                        // We don't need to upload this file again
+                                        skipped++;
+                                        return undefined;
+                                    })
+                                    .catch(function(error) {
+                                        errors.push(error);
+                                    });
+                            })
+                            .then(function(content) {
+                                if (!content) {
+                                    return;
+                                }
+
+                                console.log('Uploading ' + blobName + '...');
+                                var params = {
+                                    Bucket : bucketName,
+                                    Key : blobName,
+                                    Body : content,
+                                    ContentMD5 : etag,
+                                    ContentType : contentType,
+                                    ContentEncoding : contentEncoding,
+                                    CacheControl : cacheControl
+                                };
+
+                                return s3.putObjectAsync(params).then(function() {
+                                    uploaded++;
+                                })
+                                    .catch(function(error) {
+                                        errors.push(error);
+                                    });
+                            });
+                    }, {concurrency : concurrencyLimit});
+                })
+                .then(function() {
+                    console.log('Skipped ' + skipped + ' files and successfully uploaded ' + uploaded + ' files of ' + (totalFiles - skipped) + ' files.');
+                    if (existingBlobs.length === 0) {
                         return;
                     }
 
-                    console.log('Uploading ' + blobName + '...');
-                    var params = {
-                        Bucket : bucketName,
-                        Key : blobName,
-                        Body : content,
-                        ContentMD5 : etag,
-                        ContentType : contentType,
-                        ContentEncoding : contentEncoding,
-                        CacheControl : cacheControl
-                    };
-
-                    return s3.putObjectAsync(params).then(function() {
-                        uploaded++;
-                    })
-                    .catch(function(error) {
-                        errors.push(error);
-                    });
-                });
-            }, {concurrency : concurrencyLimit});
-        })
-        .then(function() {
-            console.log('Skipped ' + skipped + ' files and successfully uploaded ' + uploaded + ' files of ' + (totalFiles - skipped) + ' files.');
-            if (existingBlobs.length === 0) {
-                return;
-            }
-
-            var objectsToDelete = [];
-            existingBlobs.forEach(function(file) {
-                //Don't delete generate zip files.
-                if (!/\.(zip|tgz)$/.test(file)) {
-                    objectsToDelete.push({Key : file});
-                }
-            });
-
-            if (objectsToDelete.length > 0) {
-                console.log('Cleaning ' + objectsToDelete.length + ' files...');
-
-                // If more than 1000 files, we must issue multiple requests
-                var batches = [];
-                while (objectsToDelete.length > 1000) {
-                    batches.push(objectsToDelete.splice(0, 1000));
-                }
-                batches.push(objectsToDelete);
-
-                return Promise.map(batches, function(objects) {
-                    return s3.deleteObjectsAsync({
-                        Bucket : bucketName,
-                        Delete : {
-                            Objects : objects
+                    var objectsToDelete = [];
+                    existingBlobs.forEach(function(file) {
+                        //Don't delete generate zip files.
+                        if (!/\.(zip|tgz)$/.test(file)) {
+                            objectsToDelete.push({Key : file});
                         }
-                    })
-                    .then(function() {
-                        console.log('Cleaned ' + objects.length + ' files.');
                     });
-                }, {concurrency : concurrency});
-            }
+
+                    if (objectsToDelete.length > 0) {
+                        console.log('Cleaning ' + objectsToDelete.length + ' files...');
+
+                        // If more than 1000 files, we must issue multiple requests
+                        var batches = [];
+                        while (objectsToDelete.length > 1000) {
+                            batches.push(objectsToDelete.splice(0, 1000));
+                        }
+                        batches.push(objectsToDelete);
+
+                        return Promise.map(batches, function(objects) {
+                            return s3.deleteObjectsAsync({
+                                Bucket : bucketName,
+                                Delete : {
+                                    Objects : objects
+                                }
+                            })
+                                .then(function() {
+                                    console.log('Cleaned ' + objects.length + ' files.');
+                                });
+                        }, {concurrency : concurrency});
+                    }
+                })
+                .catch(function(error) {
+                    errors.push(error);
+                })
+                .then(function() {
+                    if (errors.length === 0) {
+                        done();
+                        return;
+                    }
+
+                    console.log('Errors: ');
+                    errors.map(function(e) {
+                        console.log(e);
+                    });
+                    done(1);
+                });
         })
         .catch(function(error) {
-            errors.push(error);
-        })
-        .then(function() {
-            if (errors.length === 0) {
-                done();
-                return;
-            }
-
-            console.log('Errors: ');
-            errors.map(function(e) {
-                console.log(e);
-            });
-            done(1);
+            console.log('Error: Could not load S3 credentials.');
+            done();
         });
-    })
-    .catch(function(error) {
-        console.log('Error: Could not load S3 credentials.');
-        done();
-    });
 }
 
 function getMimeType(filename) {
@@ -559,17 +547,17 @@ function listAll(s3, bucketName, prefix, files, marker) {
         Prefix : prefix,
         Marker : marker
     })
-    .then(function(data) {
-        var items = data.Contents;
-        for (var i = 0; i < items.length; i++) {
-            files.push(items[i].Key);
-        }
+        .then(function(data) {
+            var items = data.Contents;
+            for (var i = 0; i < items.length; i++) {
+                files.push(items[i].Key);
+            }
 
-        if (data.IsTruncated) {
-            // get next page of results
-            return listAll(s3, bucketName, prefix, files, files[files.length - 1]);
-        }
-    });
+            if (data.IsTruncated) {
+                // get next page of results
+                return listAll(s3, bucketName, prefix, files, files[files.length - 1]);
+            }
+        });
 }
 
 gulp.task('deploy-set-version', function() {
@@ -609,19 +597,19 @@ function setStatus(state, targetUrl, description, context) {
 
     var requestPost = Promise.promisify(request.post);
     return requestPost({
-         url: 'https://api.github.com/repos/' + process.env.TRAVIS_REPO_SLUG + '/statuses/' + process.env.TRAVIS_COMMIT,
-         json: true,
-         headers: {
-             'Authorization': 'token ' + process.env.TOKEN,
-             'User-Agent': 'Cesium'
-         },
-         body: {
-             state: state,
-             target_url: targetUrl,
-             description: description,
-             context: context
-         }
-     });
+        url: 'https://api.github.com/repos/' + process.env.TRAVIS_REPO_SLUG + '/statuses/' + process.env.TRAVIS_COMMIT,
+        json: true,
+        headers: {
+            'Authorization': 'token ' + process.env.TOKEN,
+            'User-Agent': 'Cesium'
+        },
+        body: {
+            state: state,
+            target_url: targetUrl,
+            description: description,
+            context: context
+        }
+    });
 }
 
 gulp.task('release', ['combine', 'minifyRelease', 'generateDocumentation']);
@@ -912,8 +900,6 @@ function minifyCSS(outputDirectory) {
     });
 }
 
-
-
 function combineJavaScript(options) {
     var optimizer = options.optimizer;
     var outputDirectory = options.outputDirectory;
@@ -1164,19 +1150,19 @@ function createGalleryList() {
     });
 
     demoObjects.sort(function(a, b) {
-      if (a.name < b.name) {
-        return -1;
-      } else if (a.name > b.name) {
-        return 1;
-      }
-      return 0;
+        if (a.name < b.name) {
+            return -1;
+        } else if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
     });
 
     var helloWorldIndex = Math.max(demoObjects.indexOf(helloWorld), 0);
 
     var i;
     for (i = 0; i < demoObjects.length; ++i) {
-      demoJSONs[i] = JSON.stringify(demoObjects[i], null, 2);
+        demoJSONs[i] = JSON.stringify(demoObjects[i], null, 2);
     }
 
     var contents = '\
@@ -1204,11 +1190,11 @@ var sandcastleJsHintOptions = ' + JSON.stringify(primary, null, 4) + ';\n';
 
 function buildSandcastle() {
     var appStream = gulp.src([
-            'Apps/Sandcastle/**',
-            '!Apps/Sandcastle/images/**',
-            '!Apps/Sandcastle/gallery/**.jpg'
-        ])
-        // Replace require Source with pre-built Cesium
+        'Apps/Sandcastle/**',
+        '!Apps/Sandcastle/images/**',
+        '!Apps/Sandcastle/gallery/**.jpg'
+    ])
+    // Replace require Source with pre-built Cesium
         .pipe(gulpReplace('../../../ThirdParty/requirejs-2.1.20/require.js', '../../../CesiumUnminified/Cesium.js'))
         // Use unminified cesium instead of source
         .pipe(gulpReplace('Source/Cesium', 'CesiumUnminified'))
@@ -1220,12 +1206,12 @@ function buildSandcastle() {
         .pipe(gulp.dest('Build/Apps/Sandcastle'));
 
     var imageStream = gulp.src([
-            'Apps/Sandcastle/gallery/**.jpg',
-            'Apps/Sandcastle/images/**'
-        ], {
-            base: 'Apps/Sandcastle',
-            buffer: false
-        })
+        'Apps/Sandcastle/gallery/**.jpg',
+        'Apps/Sandcastle/images/**'
+    ], {
+        base: 'Apps/Sandcastle',
+        buffer: false
+    })
         .pipe(gulp.dest('Build/Apps/Sandcastle'));
 
     return eventStream.merge(appStream, imageStream);

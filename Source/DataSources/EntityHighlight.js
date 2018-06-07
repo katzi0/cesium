@@ -1,10 +1,10 @@
 define([
-    "../DataSources/CallbackProperty",
-    "../Core/EasingFunction",
-    "../Core/defaultValue",
-    "../Core/defined"
+    '../DataSources/CallbackProperty',
+    '../Core/EasingFunction',
+    '../Core/defaultValue',
+    '../Core/defined'
 ], function(CallbackProperty, EasingFunction, defaultValue, defined) {
-    "use strict";
+    'use strict';
 
     function EntityHighlight(props, scope) {
         EntityHighlight.prototype.scope = scope;
@@ -14,18 +14,18 @@ define([
     }
 
     var AnimateType = {
-        shrinkGrow: "shrink/grow",
-        IndicationEnlarge: "IndicationEnlarge"
+        shrinkGrow : 'shrink/grow',
+        IndicationEnlarge : 'IndicationEnlarge'
     };
 
     EntityHighlight.prototype.setOptions = function(scope) {
         var options = scope._options;
-        options.animateType = defaultValue(options.animateType, "shrink/grow");
+        options.animateType = defaultValue(options.animateType, 'shrink/grow');
         options.primitiveType = defaultValue(
             options.primitiveType,
-            "billboard"
+            'billboard'
         );
-        options.scalePercent = defaultValue(options.scalePercent, 0.5);
+        options.scalePercent = defaultValue(options.scalePercent, 0.9);
         options.minScale = defaultValue(options.minScale, 1);
         options.interval = defaultValue(options.interval, true);
         options.timeoutInterval = defaultValue(options.timeoutInterval, 16);
@@ -34,7 +34,7 @@ define([
         options.indicationOnly = defaultValue(options.indicationOnly, false);
         options.easingFunction = defaultValue(
             options.easingFunction,
-            "ELASTIC_OUT"
+            'ELASTIC_OUT'
         );
         options.stopIncrease = false;
         options.scaleSum = 0;
@@ -63,6 +63,7 @@ define([
             options = Object.assign({}, options, option);
         });
 
+        this._options = options;
         var selectedEntity = entity;
         var helperArr = [];
         if (animationArr) {
@@ -121,20 +122,21 @@ define([
 
     EntityHighlight.prototype.enlarge = function(selectedEntity, options) {
         var increase;
-        var scaleSum;
+
         var minScale = options.minScale;
         var scale;
 
         this.calculateEnlargeStep = function() {
-            var durationInSeconds = 3000;
+            var durationInSeconds = this._options.speed;
             var numberOfSteps = durationInSeconds / 2 / 16;
-            var currentScale = 1;
+            var currentScale = this._options.minScale;
             var scalePercent = 1 + 0.5;
             var scaleDelta = scalePercent * currentScale - currentScale;
             var scalePerStep = scaleDelta / numberOfSteps;
             return scalePerStep;
         };
         this.setAnimate = function() {
+            var scaleSum;
             var scalePerStep = this.calculateEnlargeStep();
             EntityHighlight.prototype.scope.billboard.scale = new CallbackProperty(
                 function() {
@@ -151,8 +153,8 @@ define([
                     }
 
                     scale = increase
-                        ? EasingFunction.BACK_OUT(scaleSum)
-                        : EasingFunction.BACK_IN(scaleSum);
+                            ? EasingFunction.BACK_OUT(scaleSum)
+                            : EasingFunction.BACK_IN(scaleSum);
                     scale += minScale;
                     return scale;
                 },
@@ -186,7 +188,6 @@ define([
         var minScale = options.minScale;
         var easingFunction = options.easingFunction;
         var stopIncrease = options.stopIncrease;
-        var scaleSum;
 
         this.calculateEnlargeStep = function() {
             var durationInSeconds = speed;
@@ -199,16 +200,18 @@ define([
         };
 
         this.setAnimate = function() {
+            var scaleSum;
             var scalePerStep = this.calculateEnlargeStep();
             if (!stopIncrease) {
                 EntityHighlight.prototype.scope.billboard.scale = new CallbackProperty(
                     function() {
                         scaleSum = scaleSum
-                            ? scaleSum + scalePerStep
-                            : scalePerStep;
+                                   ? scaleSum + scalePerStep
+                                   : scalePerStep;
                         if (scaleSum >= 1) {
                             return 1;
                         }
+                        console.log(EasingFunction[easingFunction](scaleSum));
                         return EasingFunction[easingFunction](scaleSum);
                     },
                     false
